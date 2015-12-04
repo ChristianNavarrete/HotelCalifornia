@@ -7,8 +7,14 @@
 //
 
 #import "AppDelegate.h"
+#import "ViewController.h"
+#import "Hotel.h"
+#import "Room.h"
 
 @interface AppDelegate ()
+
+@property (strong, nonatomic) UINavigationController *navigationController;
+@property (strong, nonatomic) ViewController *viewController;
 
 @end
 
@@ -17,7 +23,91 @@
 
 - (BOOL)application:(UIApplication *)application didFinishLaunchingWithOptions:(NSDictionary *)launchOptions {
     // Override point for customization after application launch.
+    [self setUpRootViewController];
+    [self bootstrapApp];
     return YES;
+}
+
+- (void) setUpRootViewController {
+    
+    
+    self.window  = [[UIWindow alloc] initWithFrame:[[UIScreen mainScreen] bounds]];
+    self.viewController = [[ViewController alloc] init];
+    self.navigationController = [[UINavigationController alloc] initWithRootViewController:self.viewController];
+    
+    self.viewController.view.backgroundColor = [UIColor whiteColor];
+    self.window.rootViewController = self.navigationController;
+    
+    [self.window makeKeyAndVisible];
+    
+    
+    
+}
+
+
+-(void) bootstrapApp {
+    
+    
+    NSFetchRequest *request = [NSFetchRequest fetchRequestWithEntityName:@"Hotel"];
+    
+    NSError *error;
+    NSInteger count = [self.managedObjectContext countForFetchRequest:request error:&error];
+    
+    if (count == 0) {
+        
+        NSDictionary *hotels = [NSDictionary new];
+        NSDictionary *rooms = [NSDictionary new];
+        
+        NSString *jsonPath = [[NSBundle mainBundle] pathForResource:@"hotels" ofType:@"json"];
+        NSData *jsonData = [NSData dataWithContentsOfFile:jsonPath];
+        
+        NSError *jsonError;
+        NSDictionary *rootObject = [NSJSONSerialization JSONObjectWithData:jsonData options:0 error:&error];
+        
+    
+        if (jsonError) { NSLog(@"Error serializing JSON."); return; }
+        
+        hotels = rootObject[@"Hotels"];
+        
+        //go through each hotel object inside of hotels
+        
+        for (NSDictionary *hotel in hotels) {
+            
+            Hotel *newHotel = [NSEntityDescription insertNewObjectForEntityForName:@"Hotel" inManagedObjectContext:self.managedObjectContext];
+            newHotel.name = hotel[@"name"];
+            newHotel.location = hotel[@"location"];
+            newHotel.stars = hotel[@"rate"];
+            
+            rooms = hotel[@"rooms"];
+            
+            for (NSDictionary *room in rooms) {
+                
+                Room *newRoom = [NSEntityDescription insertNewObjectForEntityForName:@"Room" inManagedObjectContext:self.managedObjectContext];
+                newRoom.number = room[@"number"];
+                newRoom.beds = room[@"beds"];
+                newRoom.rate = room[@"rate"];
+                newRoom.hotel = newHotel;
+                
+            }
+            
+            
+        }
+        
+        
+        NSError *saveError;
+        BOOL isSaved = [self.managedObjectContext save:&saveError];
+        
+        if (isSaved) {
+            NSLog(@"Saved successfully.");
+        } else {
+            NSLog(@"%@", saveError.localizedDescription);
+        }
+        
+        
+    }
+    
+    
+    
 }
 
 - (void)applicationWillResignActive:(UIApplication *)application {
