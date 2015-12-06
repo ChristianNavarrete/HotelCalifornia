@@ -23,28 +23,7 @@
 
 @implementation LookupViewController
 
-- (NSFetchedResultsController *) fetchedController {
-    
-    if (!_fetchedController) {
-        NSFetchRequest *request = [NSFetchRequest fetchRequestWithEntityName:@"Reservation"];
-        NSSortDescriptor *sortDescriptor = [[NSSortDescriptor alloc] initWithKey:@"name" ascending:true];
-        request.sortDescriptors = @[sortDescriptor];
-        AppDelegate *delegate = [[UIApplication sharedApplication] delegate];
-        
-        _fetchedController = [[NSFetchedResultsController alloc] initWithFetchRequest:request managedObjectContext:delegate.managedObjectContext sectionNameKeyPath:nil cacheName:nil];
-        _fetchedController.delegate = self;
-        [_fetchedController performFetch:nil];
-        
-        
-        
-        
-    }
-    
-    
-    
-    return _fetchedController;
-    
-}
+
 
 - (void)loadView {
     
@@ -101,24 +80,24 @@
 
 #pragma mark - UITableViewDataSource
 
-//- (NSInteger)tableView:(UITableView *)tableView numberOfRowsInSection:(NSInteger)section {
-//    return [self.datasource count];
-//}
-//
-//- (UITableViewCell *)tableView:(UITableView *)tableView cellForRowAtIndexPath:(NSIndexPath *)indexPath {
-//    UITableViewCell *cell = [tableView dequeueReusableCellWithIdentifier:@"cell" forIndexPath:indexPath];
-//    
-//    if (!cell) {
-//        cell = [[UITableViewCell alloc]initWithStyle:UITableViewCellStyleDefault reuseIdentifier:@"cell"];
-//    }
-//    
-//    Reservation *reservation = self.datasource[indexPath.row];
-//    
-////MARK: May be an issue with core data here.
-//    cell.textLabel.text = [NSString stringWithFormat:@"Name: %@, Hotel: %@", reservation.guest.name, reservation.room.hotel.name];
-//    
-//    return cell;
-//}
+- (NSInteger)tableView:(UITableView *)tableView numberOfRowsInSection:(NSInteger)section {
+    return [self.datasource count];
+}
+
+- (UITableViewCell *)tableView:(UITableView *)tableView cellForRowAtIndexPath:(NSIndexPath *)indexPath {
+    UITableViewCell *cell = [tableView dequeueReusableCellWithIdentifier:@"cell" forIndexPath:indexPath];
+    
+    if (!cell) {
+        cell = [[UITableViewCell alloc]initWithStyle:UITableViewCellStyleDefault reuseIdentifier:@"cell"];
+    }
+    
+    Reservation *reservation = self.datasource[indexPath.row];
+    
+//MARK: May be an issue with core data here.
+    cell.textLabel.text = [NSString stringWithFormat:@"Name: %@, Hotel: %@", reservation.guest.name, reservation.room.hotel.name];
+    
+    return cell;
+}
 
 #pragma mark - UITableViewDelegate
 
@@ -157,40 +136,5 @@
 
 #pragma mark - NSFetchResultsController 
 
-- (NSInteger)numberOfSectionsInTableView:(UITableView *)tableView {
-    return [[self.fetchedController sections] count];
-}
-
-- (NSInteger)tableView:(UITableView *)table numberOfRowsInSection:(NSInteger)section {
-    if ([[self.fetchedController sections] count] > 0) {
-        id <NSFetchedResultsSectionInfo> sectionInfo = [[self.fetchedController sections] objectAtIndex:section];
-        return [sectionInfo numberOfObjects];
-    } else
-        return 0;
-}
-
-- (UITableViewCell *)tableView:(UITableView *)tableView cellForRowAtIndexPath:(NSIndexPath *)indexPath {
-    
-    UITableViewCell *cell = [self.tableView dequeueReusableCellWithIdentifier:@"cell"];
-    Reservation *managedObject = [self.fetchedController objectAtIndexPath:indexPath];
-    // Configure the cell with data from the managed object.
-    return cell;
-}
-
-- (NSString *)tableView:(UITableView *)tableView titleForHeaderInSection:(NSInteger)section {
-    if ([[self.fetchedController sections] count] > 0) {
-        id <NSFetchedResultsSectionInfo> sectionInfo = [[self.fetchedController sections] objectAtIndex:section];
-        return [sectionInfo name];
-    } else
-        return nil;
-}
-
-- (NSArray *)sectionIndexTitlesForTableView:(UITableView *)tableView {
-    return [self.fetchedController sectionIndexTitles];
-}
-
-- (NSInteger)tableView:(UITableView *)tableView sectionForSectionIndexTitle:(NSString *)title atIndex:(NSInteger)index {
-    return [self.fetchedController sectionForSectionIndexTitle:title atIndex:index];
-}
 
 @end

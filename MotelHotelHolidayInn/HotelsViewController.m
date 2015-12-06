@@ -12,14 +12,45 @@
 #import "RoomsViewController.h"
 
 
-@interface HotelsViewController () <UITableViewDataSource, UITableViewDelegate>
+
+@interface HotelsViewController () <UITableViewDataSource, UITableViewDelegate, NSFetchedResultsControllerDelegate>
 
 @property (strong, nonatomic) NSArray *datasource;
 @property (strong, nonatomic) UITableView *tableView;
+@property (strong, nonatomic) NSFetchedResultsController *fetchedController;
+
 
 @end
 
 @implementation HotelsViewController
+
+
+- (NSFetchedResultsController *) fetchedController {
+
+    if (!_fetchedController) {
+        NSFetchRequest *request = [NSFetchRequest fetchRequestWithEntityName:@"Hotel"];
+        
+        NSSortDescriptor *sortDescriptor = [[NSSortDescriptor alloc] initWithKey:@"name" ascending:true];
+        request.sortDescriptors = @[sortDescriptor];
+        AppDelegate *delegate = [[UIApplication sharedApplication] delegate];
+
+        _fetchedController = [[NSFetchedResultsController alloc] initWithFetchRequest:request managedObjectContext:delegate.managedObjectContext sectionNameKeyPath:nil cacheName:nil];
+        
+        _fetchedController.delegate = self;
+        
+        NSError *error;
+        [_fetchedController performFetch:&error];
+        
+        if (error) {
+            NSLog(@"Error: %@", error.localizedDescription);
+        } else {
+            NSLog(@"Successfully fetched...");
+        }
+    }
+
+    return _fetchedController;
+
+}
 
 - (NSArray *)datasource {
     if (!_datasource) {
@@ -92,23 +123,23 @@
 
 #pragma mark - UITableView delegate methods
 
-- (NSInteger)tableView:(UITableView *)tableView numberOfRowsInSection:(NSInteger)section {
-    return [self.datasource count];
-}
-
-- (UITableViewCell *)tableView:(UITableView *)tableView cellForRowAtIndexPath:(NSIndexPath *)indexPath {
-    
-    UITableViewCell *cell = [tableView dequeueReusableCellWithIdentifier:@"cell" forIndexPath:indexPath];
-    
-    if (!cell) {
-        cell = [[UITableViewCell alloc]initWithStyle:UITableViewCellStyleDefault reuseIdentifier:@"cell"];
-    }
-    
-    Hotel *hotel = self.datasource[indexPath.row];
-    cell.textLabel.text = hotel.name;
-    
-    return cell;
-}
+//- (NSInteger)tableView:(UITableView *)tableView numberOfRowsInSection:(NSInteger)section {
+//    return [self.datasource count];
+//}
+//
+//- (UITableViewCell *)tableView:(UITableView *)tableView cellForRowAtIndexPath:(NSIndexPath *)indexPath {
+//    
+//    UITableViewCell *cell = [tableView dequeueReusableCellWithIdentifier:@"cell" forIndexPath:indexPath];
+//    
+//    if (!cell) {
+//        cell = [[UITableViewCell alloc]initWithStyle:UITableViewCellStyleDefault reuseIdentifier:@"cell"];
+//    }
+//    
+//    Hotel *hotel = self.datasource[indexPath.row];
+//    cell.textLabel.text = hotel.name;
+//    
+//    return cell;
+//}
 
 - (CGFloat)tableView:(UITableView *)tableView heightForHeaderInSection:(NSInteger)section {
     return 150.0;
@@ -136,6 +167,49 @@
     [self.navigationController pushViewController:roomsViewController animated:YES];
     
 }
+
+
+#pragma mark-fetched controller 
+
+
+- (NSInteger)numberOfSectionsInTableView:(UITableView *)tableView {
+    return [[self.fetchedController sections] count];
+}
+
+- (NSInteger)tableView:(UITableView *)table numberOfRowsInSection:(NSInteger)section {
+    if ([[self.fetchedController sections] count] > 0) {
+        id <NSFetchedResultsSectionInfo> sectionInfo = [[self.fetchedController sections] objectAtIndex:section];
+        return [sectionInfo numberOfObjects];
+    } else
+        return 0;
+}
+
+- (UITableViewCell *)tableView:(UITableView *)tableView cellForRowAtIndexPath:(NSIndexPath *)indexPath {
+    
+    UITableViewCell *cell = [self.tableView dequeueReusableCellWithIdentifier:@"cell"];
+    Hotel *managedObject = [self.fetchedController objectAtIndexPath:indexPath];
+    // Configure the cell with data from the managed object.
+    cell.textLabel.text = [[NSString alloc] initWithFormat:@"%@", managedObject.name];
+    return cell;
+}
+
+- (NSString *)tableView:(UITableView *)tableView titleForHeaderInSection:(NSInteger)section {
+    if ([[self.fetchedController sections] count] > 0) {
+        id <NSFetchedResultsSectionInfo> sectionInfo = [[self.fetchedController sections] objectAtIndex:section];
+        return [sectionInfo name];
+    } else
+        return nil;
+}
+
+- (NSArray *)sectionIndexTitlesForTableView:(UITableView *)tableView {
+    return [self.fetchedController sectionIndexTitles];
+}
+
+- (NSInteger)tableView:(UITableView *)tableView sectionForSectionIndexTitle:(NSString *)title atIndex:(NSInteger)index {
+    return [self.fetchedController sectionForSectionIndexTitle:title atIndex:index];
+}
+
+
 
 
 @end
